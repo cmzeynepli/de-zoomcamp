@@ -61,3 +61,8 @@ WHERE tzl_pu."Zone" = 'East Harlem North'
 ORDER BY ytd."tip_amount" DESC
 LIMIT 1;
 ```
+
+## Answer 7. Terraform Workflow
+- For downloading the provider plugins and setting up backend: `terraform init`
+- For generating proposed changes and auto-executing the plan: `terraform plan`
+- For removing all resources managed by terraform: `terraform destroy`
