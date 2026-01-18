@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:18
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=ny_taxi
+    volumes:
+      - ./ny_taxi_postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "8085:80"
+    depends_on:
+      - db
+
+  ingester:
+    image: module_1:latest
+    container_name: python_ingester
+    command:
+      - --pg-user=root
+      - --pg-pass=root
+      - --pg-host=db  
+      - --pg-db=ny_taxi
+      - --pg-port=5432
+      - --batch-size=10000
+      - --parquet-table-name=yellow_taxi_data
+      - --csv-table-name=taxi_zone_lookup
+      - --year=2025
+      - --month=11
+    depends_on:
+      - db
+
+volumes:
+  pgadmin_data:
