@@ -1,0 +1,93 @@
+services:
+  pgdatabase:
+    image: postgres:18
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=ny_taxi
+    volumes:
+      - ./ny_taxi_postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - "8085:80"
+    depends_on:
+      - pgdatabase
+
+  kestra_postgres:
+    image: postgres:18
+    volumes:
+      - kestra-postgres-data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: k3str4
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+  
+  kestra:
+    image: kestra/kestra:v1.1
+    pull_policy: always
+    user: "root"
+    command: server standalone
+    volumes:
+      - kestra_data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/kestra-wd:/tmp/kestra-wd
+    environment:
+      SECRET_GCP_SA_KEY_B64: ${GCP_SA_KEY_B64}
+      SECRET_GEMINI_API_KEY: ${SECRET_GEMINI_API_KEY}
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://kestra_postgres:5432/kestra
+            driver-class-name: org.postgresql.Driver
+            username: kestra
+            password: k3str4
+        kestra:
+          ai:
+            type: gemini
+            gemini:
+              model-name: gemini-2.5-flash
+              api-key: ${GEMINI_API_KEY}
+          server:
+            basic-auth:
+              username: "admin@kestra.io"
+              password: Admin1234
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: "/app/storage"
+          queue:
+            type: postgres
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+          url: http://localhost:8080
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      kestra_postgres:
+        condition: service_started
+
+volumes:
+  ny_taxi_postgres_data:
+    driver: local
+  kestra-postgres-data:
+    driver: local
+  kestra_data: 
+    driver: local
