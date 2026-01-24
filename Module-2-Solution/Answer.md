@@ -1,5 +1,5 @@
 ## Answer 1 
-134.5 MiB
+134.5 MB = ~ 128.3 MiB
 
 ## Answer 2 
 green_tripdata_2020-04.csv
