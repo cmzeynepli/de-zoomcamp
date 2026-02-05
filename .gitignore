@@ -212,3 +212,21 @@ __marimo__/
 
 #VScode
 .vscode
+
+#terrademo
+terrademo/
+
+#docker temp data
+ny_taxi_postgres_data/
+#sandbox keys
+sandbox_key/
+
+#images
+*.png
+*.json
+
+load_yellow_taxi_data.py
+dbt_key.yml
+main.tf
+
+Module-4-Solution/
