@@ -229,4 +229,5 @@ load_yellow_taxi_data.py
 dbt_key.yml
 main.tf
 
-Module-4-Solution/
+data/
+taxi_rides_ny/
