@@ -1,0 +1,88 @@
+/* 
+@bruin
+name: staging.trips
+//type: duckdb.sql
+
+depends:
+  - ingestion.trips
+  - ingestion.payment_lookup
+
+materialization:
+  type: table
+  strategy: time_interval
+  incremental_key: pickup_datetime
+  time_granularity: timestamp
+
+columns:
+  - name: trip_id
+    type: string
+    description: Unique identifier for the trip (hash of key columns)
+    primary_key: true
+    checks:
+      - name: not_null
+  - name: total_amount
+    type: numeric
+    checks:
+      - name: non_negative
+
+custom_checks:
+  - name: check_distinct_trips
+    description: Ensure no duplicate trips exist in the processed window
+    query: |
+      SELECT COUNT(*) - COUNT(DISTINCT trip_id)
+      FROM staging.trips
+      WHERE pickup_datetime >= '{{ start_datetime }}'
+        AND pickup_datetime < '{{ end_datetime }}'
+    value: 0
+@bruin 
+
+WITH raw_data AS (
+    -- 1. Deduplication using ROW_NUMBER
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY vendor_id, pickup_datetime, pickup_location_id 
+            ORDER BY extracted_at DESC
+        ) as rn
+    FROM ingestion.trips
+    WHERE pickup_datetime >= '{{ start_datetime }}'
+      AND pickup_datetime < '{{ end_datetime }}'
+),
+
+cleaned_data AS (
+    -- 2. Normalization and Filtering
+    SELECT
+        -- Create a unique ID for deduplication/PK
+        md5(concat(vendor_id, pickup_datetime, pickup_location_id, dropoff_location_id)) as trip_id,
+        vendor_id,
+        pickup_datetime,
+        dropoff_datetime,
+        date_diff('minute', pickup_datetime, dropoff_datetime) as duration_minutes,
+        passenger_count,
+        trip_distance,
+        rate_code_id,
+        store_and_fwd_flag,
+        pickup_location_id,
+        dropoff_location_id,
+        payment_type,
+        fare_amount,
+        extra,
+        mta_tax,
+        tip_amount,
+        tolls_amount,
+        improvement_surcharge,
+        total_amount,
+        taxi_type
+    FROM raw_data
+    WHERE rn = 1 
+      AND vendor_id IS NOT NULL
+      AND total_amount >= 0
+)
+
+-- 3. Enrichment via JOIN
+SELECT 
+    t.*,
+    p.payment_type_name AS payment_type_description 
+FROM cleaned_data t
+LEFT JOIN ingestion.payment_lookup p 
+    ON t.payment_type = p.payment_type_id */

@@ -1,0 +1,15 @@
+default_environment: default
+environments:
+    default:
+        connections:
+            google_cloud_platform:
+                - name: gcp-default
+                  project_id: bruin-487414
+                  location: US
+                  service_account_file: '/home/cedan/de-zoomcamp/Module-5-Solution/my-pipeline/keys/bruin.json'
+
+            duckdb:
+                - name: duckdb-default
+                  path: /home/cedan/de-zoomcamp/nyc_taxi.db
+        
+           

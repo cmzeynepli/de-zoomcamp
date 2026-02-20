@@ -1,0 +1,55 @@
+/* 
+@bruin
+name: reports.trips_report
+//type: duckdb.sql
+
+depends:
+  - staging.trips
+
+materialization:
+  type: table
+  strategy: time_interval
+  incremental_key: pickup_datetime
+  time_granularity: timestamp
+
+columns:
+  - name: taxi_type
+    type: string
+    description: Type of taxi (yellow or green)
+    primary_key: true
+  - name: payment_type_description
+    type: string
+    description: Human-readable payment method
+    primary_key: true
+  - name: pickup_datetime
+    type: timestamp
+    description: The start of the hourly aggregation window
+    primary_key: true
+  - name: total_trips
+    type: bigint
+    description: Total number of trips in this window
+    checks:
+      - name: non_negative
+  - name: total_revenue
+    type: numeric
+    description: Total amount collected including tips and fees
+    checks:
+      - name: non_negative
+  - name: avg_trip_distance
+    type: numeric
+    description: Average distance traveled per trip
+@bruin 
+
+
+SELECT 
+    taxi_type,
+    payment_type_description,
+    date_trunc('hour', pickup_datetime) as pickup_datetime,
+    COUNT(trip_id) as total_trips,
+    SUM(total_amount) as total_revenue,
+    AVG(trip_distance) as avg_trip_distance,
+    AVG(duration_minutes) as avg_duration_minutes
+FROM staging.trips
+WHERE pickup_datetime >= '{{ start_datetime }}'
+  AND pickup_datetime < '{{ end_datetime }}'
+GROUP BY 1, 2, 3 */

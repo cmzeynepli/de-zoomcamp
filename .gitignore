@@ -231,3 +231,8 @@ main.tf
 
 data/
 taxi_rides_ny/
+logs/runs
+logs/*.log
+*.py[cod]
+logs/queries
+*.db
