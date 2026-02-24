@@ -236,3 +236,8 @@ logs/*.log
 *.py[cod]
 logs/queries
 *.db
+.cursor/
+.dlt/
+*.duckdb
+open_library*.*
+requirements.txt
