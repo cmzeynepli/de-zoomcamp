@@ -241,3 +241,6 @@ logs/queries
 *.duckdb
 open_library*.*
 requirements.txt
+data/
+pyproject.toml
+*.csv
